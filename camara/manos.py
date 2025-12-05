@@ -1,8 +1,22 @@
 import cv2
 import mediapipe as mp
+import screen_brightness_control as sbc
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
+
+def recognize_gesture(hand_landmarks):
+    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+    
+    
+    current = sbc.get_brightness(display=0)[0]
+
+
+    if thumb_tip.y > index_tip.y:
+        sbc.set_brightness(display=0, value=min(100, current + 10))
+    else:
+        sbc.set_brightness(display=0, value=max(0, current - 10))
 
 hands = mp_hands.Hands(
     static_image_mode=False,       
@@ -31,6 +45,9 @@ while True :
             h, w, _ = frame.shape
             cx, cy = int(x * w), int(y * h)
             cv2.circle(frame, (cx, cy), 10, (0, 255, 0), cv2.FILLED)
+
+            gesture = recognize_gesture(hand_landmarks)
+            cv2.putText(frame, gesture, (cx - 50, cy - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
     cv2.imshow("Hand Tracking", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
